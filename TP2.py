@@ -23,3 +23,9 @@ embedding = Isomap(n_components=6)
 X_transformed_Isomap = embedding.fit_transform(X)
 
 res = np.concatenate((X_transformed_PCA, X_transformed_KPCA, X_transformed_Isomap), axis=1)
+
+means = np.mean(res,axis=0)
+stdevs = np.std(res,axis=0)
+resStd = (res-means)/stdevs
+
+a
