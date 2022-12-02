@@ -28,4 +28,3 @@ means = np.mean(res,axis=0)
 stdevs = np.std(res,axis=0)
 resStd = (res-means)/stdevs
 
-a
