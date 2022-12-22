@@ -15,7 +15,7 @@ R1:
 
 
 Q2: After selecting the attributes, did you standardize or normalize the values? Justify your decision.
-R2:
+R2: We standardize the values because each feature has its own scale and unit and the values follows a Gaussian Distribution.
 
 
 Q3: Explain how you found the parameters for the clustering algorithms.
