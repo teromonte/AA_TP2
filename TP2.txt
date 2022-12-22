@@ -15,22 +15,29 @@ R1:
 
 
 Q2: After selecting the attributes, did you standardize or normalize the values? Justify your decision.
-R2:
+R2: We standardized the values, because normalizing them loses the scale, and in this case we figured the scale might have important information that could be lost. Normalizing should let us use the clustering algorithms effectively without that happening.
 
 
 Q3: Explain how you found the parameters for the clustering algorithms.
-R3:
-
+R3: By comparing ranges of values for them, and most importantly, by considering the specific problem at hand: cells in 3 stages, and a couple pretty different kinds of segmentation errors. Keeping this in mind, then, to compare the ranges, we executed the algorithms for various numbers of clusters various times (we didn't manage to do this for neighbouring distances), and compared the various metrics calculated. We ran the algorithms using all the data, then (tried to) cut off the unlabeled data, and use only the labelled data for the external indicators.
 
 
 Q4: Describe your analysis of the parameters using the internal and external indicators referred in the assignment page. Include the  plots for the indicator values ​​(indicating the image name of each plot in one line in your answer) as a function of the parameters and explain how you chose the ranges for examining these parameters. Indicate, with justification, what conclusions you can draw from this analysis.
-R4:
+R4: First I should sincerely mention: our clustering and metrics ended up having wildly varying, strange, and often abysmal results. We clearly did some things wrong, as this is a very delicate process, and even the modules used say we did. We tried to fix this, but mostly could not. The result is we don't quite trust our results, and I'd wager neither should biologists. Alas, for the actual conclusions: according to the indicators, the number of clusters that most often have the average "peak" of performance/reliability is the 3 to 5 range, with 4 being the most common peak. The image containing all the plots is in the main folder, and is:
+metrics-per-nclusters.png
+
 
 Q5: Select some of the parameter values ​​tested in the question above and examine the corresponding clusters more closely, generating the HTML file with the images. Explain how you selected these parameter values, discuss the different options and propose a recommendation that could help the biologists' task of classifying cells and rejecting segmentation errors.
-R5:
+R5: My first recommendation is to find better data analysts and redo this whole process. But, if we assumed our results were to be trusted, here's some results for 4 and 6 clusters respectively:
+4: Agglomerative clustering did better than the other algorithms, clustering most of the segmentation errors into one cluster, and most of the clearly split cells into another cluster. Kmeans did okay as well, also keeping similar-looking cells clustered for the most part, but... also keeping the splitting cells in the same cluster as the worst segmentation errors. Spectral clustering was bad, and had one enormous cluster with almost everything, and then the few other images seemingly spread out without much rhyme or reason.
+6: Agglomerative got a bit worse, keeping segmentation errors in all clusters, with the worst ones still grouped in the same cluster. At least the cells are still somewhat clustered by stage. Kmeans, even though it also pretty much had segmentation errors in all clusteres, mostly kept them to one cluster, mainly the obvious errors, and did manage to keep about half of the obviously split cells in one cluster. It did a little better than agglomerative this time. With spectral clustering, the same problem as with 4 clusters happened. But at least the tiny clusters do seem to have cells in the same stages.
+Overall (again, if the results are to be trusted) I would recommend using Agglomerative clustering, with 4 clusters.
 
 Q6: Discuss advantages or problems with the algorithms analysed for the purpose of helping biologists to organize these images, considering your theoretical knowledge of these algorithms as well as the results you obtained in your work.
-R6:
+R6: I will divide my response into:
+K-means: Generally speaking, it has the advantages of being fast, efficient and simple, and can handle large multidimensional datasets easily. It also has the problems of the somewhat random and delicate initial state (the center of each cluster), and because of how it works with centers and distances, it assumes the clusters are pretty much circular.
+Agglomerative: It's not so sensitive to initial conditions like Kmeans, because each starting cluster is supposedly one of the data points, and it can also handle large datasets decently, though not as well. However, it (supposedly) works with parameters (like linkage) that may require prior knowledge on the data, and it can work pretty badly if the clusters aren't "obvious" (for example, with noisy data).
+Spectral: In a way, it would be the most reliable of the 3, because it does not at all need linearly separable (or circularly separable?) data; but this might come with its own issues for many datasets, as we just saw in this assignment. It can also be pretty slow and heavy, computationally, making it difficult to use for very large datasets.
 
 Q7: Consider other clustering algorithms embedded in the Scikit-Learn library. Choose one and apply it to this problem, optimizing the parameters you deem appropriate in the way that you find adequate. Justify your choices and discuss whether this option would yield more useful results for biologists.
 R7:

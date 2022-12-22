@@ -45,9 +45,10 @@ X_transformed_Isomap = ezmbedding.fit_transform(X)
 res = np.concatenate((X_transformed_PCA, X_transformed_KPCA, X_transformed_Isomap), axis=1)
 
 resSTD = (res - np.mean(res, axis=0)) / np.std(res, axis=0)
-resNORM = normalize(res)
 
-res_labelled = resNORM[np.nonzero(labels[:,1])]
+report_k = 6      # from comparisons
+
+res_labelled = resSTD[np.nonzero(labels[:,1])]
 
 fig = plt.figure(figsize=(18, 12))
 fig.subplots_adjust(hspace=0.22, wspace=0.25)
@@ -57,7 +58,8 @@ metrics = {
     "f1 score": [],
     "recall": [],
     "precision": [],
-    "purity": []
+    "purity": [],
+    "kmeans loss": []
   }
 
 k_aux = 1
@@ -74,56 +76,61 @@ for m in metrics.keys():
 
 for k in range(CLUSTERS_MIN, CLUSTERS_MAX+1):
     array_pos = k - CLUSTERS_MIN
-    labels_Kmeans = KMeans(n_clusters=k).fit_predict(res_labelled)
+    Kmeans_alg = KMeans(n_clusters=k)
+    labels_Kmeans = Kmeans_alg.fit_predict(resSTD)
+    prelabelled_Kmeans = labels_Kmeans[np.nonzero(labels[:,1])]
     
-    score_randIndex = rand_score(labelled_labels[:,1], labels_Kmeans)
+    score_randIndex = rand_score(labelled_labels[:,1], prelabelled_Kmeans)
     metrics["rand index"][array_pos] = score_randIndex
     
-    score_f1 = f1_score(labelled_labels[:,1], labels_Kmeans, average='macro')
+    score_f1 = f1_score(labelled_labels[:,1], prelabelled_Kmeans, average='macro')
     metrics["f1 score"][array_pos] = score_f1
     
-    score_recall = recall_score(labelled_labels[:,1], labels_Kmeans, average='macro')
+    score_recall = recall_score(labelled_labels[:,1], prelabelled_Kmeans, average='macro')
     metrics["recall"][array_pos] = score_recall
 
-    score_precision = precision_score(labelled_labels[:,1], labels_Kmeans, average='macro')
+    score_precision = precision_score(labelled_labels[:,1], prelabelled_Kmeans, average='macro')
     metrics["precision"][array_pos] = score_precision
 
-    score_purity = purity_score(labelled_labels[:,1], labels_Kmeans)
+    score_purity = purity_score(labelled_labels[:,1], prelabelled_Kmeans)
     metrics["purity"][array_pos] = score_purity
     
-for ax in fig.get_axes():
-    ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics[ax.get_title()] ) 
+    metrics["kmeans loss"][array_pos] = Kmeans_alg.inertia_
     
-best_k = 4 # how to calculate?
-aux.report_clusters(labels[:,0], KMeans(n_clusters=best_k).fit_predict(resNORM), "report_kmeans.html")
+for ax in fig.get_axes():
+    ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics[ax.get_title()], 
+            color='green', label='KMeans') 
+    
+aux.report_clusters(labels[:,0], KMeans(n_clusters=report_k).fit_predict(resSTD), "report_kmeans.html")
 
 # AgglomerativeClustering #############################
 
 for k in range(CLUSTERS_MIN, CLUSTERS_MAX+1):
     array_pos = k - CLUSTERS_MIN
-    labels_Agg = AgglomerativeClustering(n_clusters=k).fit_predict(res_labelled)
+    labels_Agg = AgglomerativeClustering(n_clusters=k).fit_predict(resSTD)
+    prelabelled_Agg = labels_Agg[np.nonzero(labels[:,1])]
     
-    score_randIndex = rand_score(labelled_labels[:,1], labels_Agg)
+    score_randIndex = rand_score(labelled_labels[:,1], prelabelled_Agg)
     metrics["rand index"][array_pos] = score_randIndex
     
-    score_f1 = f1_score(labelled_labels[:,1], labels_Agg, average='macro')
+    score_f1 = f1_score(labelled_labels[:,1], prelabelled_Agg, average='macro')
     metrics["f1 score"][array_pos] = score_f1
     
-    score_recall = recall_score(labelled_labels[:,1], labels_Agg, average='macro')
+    score_recall = recall_score(labelled_labels[:,1], prelabelled_Agg, average='macro')
     metrics["recall"][array_pos] = score_recall
 
-    score_precision = precision_score(labelled_labels[:,1], labels_Agg, average='macro')
+    score_precision = precision_score(labelled_labels[:,1], prelabelled_Agg, average='macro')
     metrics["precision"][array_pos] = score_precision
 
-    score_purity = purity_score(labelled_labels[:,1], labels_Agg)
+    score_purity = purity_score(labelled_labels[:,1], prelabelled_Agg)
     metrics["purity"][array_pos] = score_purity
     
 for ax in fig.get_axes():
-    ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics[ax.get_title()] ) 
+    ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics[ax.get_title()], 
+            color='orange', label='Agglomerative') 
     
-best_k = 4 # how to calculate?
-aux.report_clusters(labels[:,0], AgglomerativeClustering(n_clusters=best_k).fit_predict(resNORM), 
-                    "report_kmeans.html")
+aux.report_clusters(labels[:,0], AgglomerativeClustering(n_clusters=report_k).fit_predict(resSTD), 
+                    "report_agg.html")
 
 
 # SpectralClustering ##################################
@@ -131,41 +138,38 @@ aux.report_clusters(labels[:,0], AgglomerativeClustering(n_clusters=best_k).fit_
 for k in range(CLUSTERS_MIN, CLUSTERS_MAX+1):
     array_pos = k - CLUSTERS_MIN
     labels_Spectral = SpectralClustering(n_clusters=k, assign_labels='cluster_qr'
-                                         ).fit_predict(res_labelled)
+                                         ).fit_predict(resSTD)
+    prelabelled_Spectral = labels_Spectral[np.nonzero(labels[:,1])]
     
-    score_randIndex = rand_score(labelled_labels[:,1], labels_Spectral)
+    score_randIndex = rand_score(labelled_labels[:,1], prelabelled_Spectral)
     metrics["rand index"][array_pos] = score_randIndex
     
-    score_f1 = f1_score(labelled_labels[:,1], labels_Spectral, average='macro')
+    score_f1 = f1_score(labelled_labels[:,1], prelabelled_Spectral, average='macro')
     metrics["f1 score"][array_pos] = score_f1
     
-    score_recall = recall_score(labelled_labels[:,1], labels_Spectral, average='macro')
+    score_recall = recall_score(labelled_labels[:,1], prelabelled_Spectral, average='macro')
     metrics["recall"][array_pos] = score_recall
 
-    score_precision = precision_score(labelled_labels[:,1], labels_Spectral, average='macro')
+    score_precision = precision_score(labelled_labels[:,1], prelabelled_Spectral, average='macro')
     metrics["precision"][array_pos] = score_precision
 
-    score_purity = purity_score(labelled_labels[:,1], labels_Spectral)
+    score_purity = purity_score(labelled_labels[:,1], prelabelled_Spectral)
     metrics["purity"][array_pos] = score_purity
     
 for ax in fig.get_axes():
-    ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics[ax.get_title()] ) 
+    ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics[ax.get_title()], 
+            color='red', label='Spectral') 
+    ax.legend(['KMeans', 'Agglomerative', 'Spectral'])
     
-best_k = 4 # how to calculate?
-aux.report_clusters(labels[:,0], SpectralClustering(n_clusters=best_k, assign_labels='cluster_qr'
-                                                    ).fit_predict(resNORM), "report_kmeans.html")
-# examine the performances varying the main parameters of each clustering alg
-#internalIndex
-#kmeansLoss -> kmeans.inertia?
-#externalIndexes
+aux.report_clusters(labels[:,0], SpectralClustering(n_clusters=report_k, assign_labels='cluster_qr'
+                                                    ).fit_predict(resSTD), "report_spec.html")
 
-rows, cols = np.shape(labelled_labels)
-print(rows)
-rows, cols = np.shape(res_labelled)
-print(rows)
+# kmeans loss plot
+ax.plot( range(CLUSTERS_MIN, CLUSTERS_MAX+1), metrics["kmeans loss"], color='green')
 
 #purity better closer to 1
 #precision better closer to 1
 #recall better closer to 1
 #f1 measure better closer to 1
 #randInxex better closer to 1
+#for kmeansLoss, the lower the better
